@@ -1,0 +1,4 @@
+<resources>
+    <!-- 构建前替换成已确认的完整发布链接；XML中的&amp;需按XML规则转义。 -->
+    <string name="display_url" translatable="false">https://example.invalid/#/display</string>
+</resources>

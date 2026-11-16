@@ -1,0 +1,90 @@
+// 从本次实机版本提取的视觉参考片段，不能独立编译。
+// 仅保留绘制布局；应用跳转、开机服务和设备包名不在这里。
+// 宿主需提供 Android Activity/Canvas 环境、R.drawable 品牌图片及系统网络读取权限。
+    private class HomeCanvas extends View {
+        int selected;
+        final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        final Bitmap logo = BitmapFactory.decodeResource(getResources(), com.local.beikehome.R.drawable.beike_logo);
+        final Bitmap mark = BitmapFactory.decodeResource(getResources(), com.local.beikehome.R.drawable.beike_mark);
+        final Typeface regular = Typeface.create("sans-serif", Typeface.NORMAL);
+        final Typeface medium = Typeface.create("sans-serif-medium", Typeface.NORMAL);
+        HomeCanvas() { super(HomeActivity.this); setFocusable(true); requestFocus(); }
+        void color(int color) { p.setShader(null); p.setColor(color); p.setStyle(Paint.Style.FILL); }
+        void text(Canvas c, String text, float x, float y, float size, int color, boolean bold) {
+            color(color); p.setTypeface(bold ? medium : regular); p.setTextSize(size); p.setTextAlign(Paint.Align.LEFT); c.drawText(text,x,y,p);
+        }
+        void right(Canvas c, String text, float x, float y, float size, int color) {
+            color(color); p.setTypeface(regular); p.setTextSize(size); p.setTextAlign(Paint.Align.RIGHT); c.drawText(text,x,y,p); p.setTextAlign(Paint.Align.LEFT);
+        }
+        void glow(Canvas c, float x, float y, float radius, int color) {
+            p.setShader(new RadialGradient(x,y,radius,new int[]{color, Color.TRANSPARENT},null,Shader.TileMode.CLAMP));
+            p.setAlpha(255); p.setStyle(Paint.Style.FILL); c.drawRect(0,0,1920,1080,p); p.setShader(null);
+        }
+        void round(Canvas c, RectF rect, float radius, int color) { color(color); c.drawRoundRect(rect,radius,radius,p); }
+        @Override protected void onDraw(Canvas screen) {
+            super.onDraw(screen);
+            screen.save(); screen.scale(getWidth()/1920f,getHeight()/1080f);
+            p.setShader(new LinearGradient(0,0,1920,1080,0xff081b39,0xff102a49,Shader.TileMode.CLAMP));
+            screen.drawRect(0,0,1920,1080,p); p.setShader(null);
+            glow(screen,250,100,1200,0x704573ff);
+            glow(screen,1720,240,850,0x5048ccb6);
+            glow(screen,1630,1080,900,0x406f284f);
+            color(Color.WHITE); p.setAlpha(17); p.setFilterBitmap(true);
+            screen.drawBitmap(mark,null,new RectF(1190,170,1900,880),p); p.setAlpha(255);
+            color(Color.WHITE); screen.drawBitmap(logo,null,new RectF(100,78,336,162),p);
+            text(screen,"以专业，陪伴家的每一程",100,207,24,0xffbdcfe4,false);
+            Date now = new Date();
+            right(screen,new SimpleDateFormat("HH:mm",Locale.CHINA).format(now),1820,139,66,Color.WHITE);
+            right(screen,new SimpleDateFormat("yyyy年M月d日  EEEE",Locale.CHINA).format(now),1820,187,23,0xffbfcee2);
+            text(screen,"签约中心名称（按确认单替换）",100,325,52,Color.WHITE,true);
+            text(screen,"欢迎光临，请选择你要使用的服务",102,374,25,0xffb9cde5,false);
+            card(screen,new RectF(100,438,920,844),0,"签约中心大屏","排队进度 · 签约室状态",0xff4ea2ff);
+            card(screen,new RectF(1000,438,1820,844),1,"投屏","打开电视自带投屏",0xff67d5be);
+            color(0x26ffffff); screen.drawRect(100,938,1820,939,p);
+            boolean online = false;
+            ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null) { NetworkCapabilities net = cm.getNetworkCapabilities(cm.getActiveNetwork()); online = net != null && net.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET); }
+            round(screen,new RectF(100,960,560,1017),18,selected==2 ? 0xff2674c6 : 0x20ffffff);
+            text(screen,"Wi-Fi 设置  ›",132,997,24,Color.WHITE,selected==2);
+            color(0x35ffffff); screen.drawRect(322,977,323,1001,p);
+            color(online ? 0xff65d6b5 : 0xfff2969b); screen.drawCircle(350,987,5,p);
+            text(screen, online ? "网络已连接" : "网络未连接",370,996,21,0xffc5d6e8,false);
+            text(screen,"方向键选择  ·  确认键打开",762,994,22,0xffb4c8de,false);
+            round(screen,new RectF(1605,960,1820,1017),18,selected==3 ? 0xff2674c6 : 0x20ffffff);
+            text(screen,"电视设置  ›",1641,997,24,Color.WHITE,selected==3);
+            screen.restore();
+        }
+        void card(Canvas c, RectF rect, int index, String title, String subtitle, int accent) {
+            boolean focus = selected == index;
+            RectF r = new RectF(rect);
+            if (focus) r.inset(-9,-9);
+            if (focus) {
+                p.setShader(new LinearGradient(r.left,r.top,r.right,r.bottom,0xff5a9dff,0xff49c6c3,Shader.TileMode.CLAMP));
+                c.drawRoundRect(new RectF(r.left-3,r.top-3,r.right+3,r.bottom+3),35,35,p); p.setShader(null);
+            }
+            p.setShader(new LinearGradient(r.left,r.top,r.right,r.bottom,focus ? 0xff214d85 : 0xff183c59,focus ? 0xff183b6a : 0xff14324e,Shader.TileMode.CLAMP));
+            c.drawRoundRect(r,32,32,p); p.setShader(null);
+            c.save();
+            Path clip = new Path(); clip.addRoundRect(r,32,32,Path.Direction.CW); c.clipPath(clip);
+            color(0x14ffffff); c.drawCircle(r.right-90,r.top+12,190,p);
+            c.restore();
+            round(c,new RectF(r.left+48,r.top+48,r.left+152,r.top+152),29,index==0 ? 0xff328af3 : 0xff35a99a);
+            color(Color.WHITE); p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(4); p.setStrokeCap(Paint.Cap.ROUND); p.setStrokeJoin(Paint.Join.ROUND);
+            float x=r.left+100,y=r.top+99;
+            if (index==0) {
+                c.drawRoundRect(new RectF(x-24,y-30,x+24,y+31),7,7,p);
+                c.drawLine(x-13,y-13,x+13,y-13,p); c.drawLine(x-13,y-1,x+7,y-1,p);
+                Path sign=new Path(); sign.moveTo(x-13,y+20); sign.lineTo(x-3,y+12); sign.lineTo(x+2,y+19); sign.lineTo(x+15,y+8); c.drawPath(sign,p);
+            } else {
+                Path tv=new Path(); tv.moveTo(x-10,y+20); tv.lineTo(x+31,y+20); tv.lineTo(x+31,y-22); tv.lineTo(x-31,y-22); tv.lineTo(x-31,y-2); c.drawPath(tv,p);
+                c.drawArc(new RectF(x-50,y+1,x-8,y+43),270,90,false,p); c.drawArc(new RectF(x-43,y+8,x-15,y+36),270,90,false,p);
+                p.setStyle(Paint.Style.FILL); c.drawCircle(x-29,y+29,3,p);
+            }
+            p.setStyle(Paint.Style.FILL); p.setStrokeCap(Paint.Cap.BUTT);
+            text(c,title,r.left+48,r.top+240,43,Color.WHITE,true);
+            text(c,subtitle,r.left+50,r.top+289,24,0xffbfd1e6,false);
+            round(c,new RectF(r.left+48,r.bottom-68,r.left+182,r.bottom-32),13,focus ? 0x35ffffff : 0x18ffffff);
+            text(c,focus ? "确认打开  ›" : "选择打开  ›",r.left+64,r.bottom-42,20,Color.WHITE,false);
+            text(c,index==0 ? "01" : "02",r.right-101,r.bottom-40,22,0xff91abc8,false);
+        }
+    }
