@@ -1,4 +1,0 @@
-interface:
-  display_name: "贝壳电视首页与签约中心大屏"
-  short_description: "先验证电视，再确认首页内容和应用链接，制作安装并验收开机启动"
-  default_prompt: "请使用 $beike-tv-home，先验证我的电视，再确认首页内容、应用入口和网页链接，制作并安装电视首页和独立的签约中心大屏应用。"
